@@ -7,7 +7,7 @@ import datetime, time
 from pprint import pprint
 from configparser import ConfigParser
 
-config = ConfigParser({'directory': '', 'dropbox_folder': '', 'db_token': ''})
+config = ConfigParser({'directory': '', 'files': '', 'dropbox_folder': '', 'db_token': ''})
 config_data = config.read("sync.ini")
 if not config.has_section("src"):
     config.add_section("src")
@@ -15,8 +15,11 @@ if not config.has_section("dst"):
     config.add_section("dst")
 
 directory = config.get("src", "directory")
+files_string = config.get("src", "files")
 dropbox_folder = config.get("dst", "dropbox_folder")
 db_token = config.get("dst", "db_token")
+
+files = files_string.split(",")
 
 def backup(dbx, target_filename, folder):
     with open(target_filename, 'rb') as f:
@@ -25,7 +28,6 @@ def backup(dbx, target_filename, folder):
         path = os.path.split(target_filename)
         name = path[len(path) - 1]
 
-        print("Uploading " + target_filename + " to Dropbox as " + folder + "/" + name + "...")
         try:
             res = dbx.files_upload(f.read(), folder + "/" + name, mode=WriteMode('overwrite'))
         except ApiError as err:
@@ -51,8 +53,19 @@ for d in os.listdir(directory):
     if ".DS_Store" not in d:
         folders.append(os.path.join(directory, d))
 
-latest_folder = max(folders, key=os.path.getmtime)
-for f in os.listdir(latest_folder):
-    if ".DS_Store" not in f:
-        backup(dbx, latest_folder + "/" + f, dropbox_folder)
+last_path = ""
 
+latest_folder = max(folders, key=os.path.getmtime)
+pfolds = os.path.split(latest_folder)
+
+db_dst_folder = "{}/{}".format(dropbox_folder, pfolds[1])
+for f in os.listdir(latest_folder):
+    tmppath = latest_folder + "/" + f
+    if ".DS_Store" not in f:
+        if f in files:
+            print("Backing up file: {0} to DROPBOX:{1}/{2}".format(tmppath, db_dst_folder, f))
+            backup(dbx, tmppath, db_dst_folder)
+        else:
+            print("Skipping file: {}".format(tmppath))
+
+print("done.")
