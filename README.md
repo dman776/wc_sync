@@ -4,7 +4,7 @@
 * Get an API token from Dropbox (allow any directory)
 * copy sync_sample.ini to sync.ini
 * edit sync.ini
-* edit org.wc.sync.plist and change the installation directory
+* edit org.wc.sync.plist and change the installation directory, schedule, etc.
 
 ## Scheduling on OSX using launchd
 ```
